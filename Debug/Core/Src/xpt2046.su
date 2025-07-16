@@ -1,0 +1,6 @@
+../Core/Src/xpt2046.c:39:9:xpt2046_write_byte	32	static
+../Core/Src/xpt2046.c:51:6:xpt2046_init	16	static
+../Core/Src/xpt2046.c:65:10:xpt2046_read_ad_value	24	static
+../Core/Src/xpt2046.c:87:10:xpt2046_read_average	40	static
+../Core/Src/xpt2046.c:118:6:xpt2046_read_xy	16	static
+../Core/Src/xpt2046.c:131:9:xpt2046_twice_read_xy	24	static

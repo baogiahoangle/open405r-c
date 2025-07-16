@@ -1,0 +1,9 @@
+../Core/Src/touch.c:44:6:tp_init	8	static
+../Core/Src/touch.c:56:6:tp_draw_touch_point	32	static
+../Core/Src/touch.c:74:6:tp_draw_big_point	16	static
+../Core/Src/touch.c:95:6:tp_show_info	32	static
+../Core/Src/touch.c:163:9:tp_scan	24	static
+../Core/Src/touch.c:207:6:tp_adjust	40	static
+../Core/Src/touch.c:369:6:tp_dialog	16	static
+../Core/Src/touch.c:375:6:tp_draw_board	8	static
+../Core/Src/touch.c:403:6:tp_get_touch_point	16	static
