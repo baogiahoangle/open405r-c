@@ -97,8 +97,9 @@ uint8_t current_screen = 0;
 uint8_t need_redraw_main = 1;
 static uint16_t fram_log_address = 0;
 uint8_t need_redraw_menu = 1;
-uint8_t led_running = 0; // Thêm biến này để theo dõi trạng thái LED (0: tắt, 1: bật)
-/*
+uint8_t led_running = 0; 
+
+#ifdef 0
 uint8_t FRAM_Write(uint16_t addr, uint8_t *data, uint16_t len) {
     uint8_t result;
     uint8_t buffer[len + 2];
@@ -123,7 +124,8 @@ uint8_t FRAM_Read(uint16_t addr, uint8_t *data, uint16_t len) {
     result = HAL_I2C_Master_Receive(&hi2c2, FRAM_ADDR, data, len, HAL_MAX_DELAY);
     return (result == HAL_OK) ? 0 : 1;
 }
-*/
+#endif
+
 int8_t write_to_backup_sram(uint8_t *data, uint16_t bytes, uint16_t offset) {
   const uint16_t backup_size = 0x1000;
   uint8_t* base_addr = (uint8_t *) BKPSRAM_BASE;
@@ -170,34 +172,29 @@ int8_t read_from_backup_sram(uint8_t *data, uint16_t bytes, uint16_t offset) {
   return 0;
 }
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
-        HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData);
+  HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &RxHeader, RxData);
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
 	if(hadc->Instance == ADC1){
 		AdcConvCmplt = 255;
-
 	}
 }
 
 void UpdateTemperature(void) {
-    if (AdcConvCmplt) {
-//        char debug_str[50];
-        VrefInt = (VREFINT * ADCMAX) / AdcRaw[0];
-        VTempSens = (VrefInt * AdcRaw[1]) / ADCMAX;
-        Temperature = (VTempSens - V25) / AVG_SlOPE + 25.0;
-//      sprintf(debug_str, "T=%.2f do C", Temperature);
-//      lcd_display_string(10, 180, (uint8_t*)debug_str, FONT_1206, BLACK);
+  if (AdcConvCmplt) {
+    VrefInt = (VREFINT * ADCMAX) / AdcRaw[0];
+    VTempSens = (VrefInt * AdcRaw[1]) / ADCMAX;
+    Temperature = (VTempSens - V25) / AVG_SlOPE + 25.0;
 
-        temperature_data[0] = (uint8_t)Temperature;
-        temperature_data[1] = (uint8_t)((Temperature - temperature_data[0]) * 100);
-        write_to_backup_sram(temperature_data, sizeof(temperature_data), 0);
-        read_from_backup_sram(data_sram, sizeof(temperature_data), 0);
-
-        AdcConvCmplt = 0;
-        HAL_ADC_Start_DMA(&hadc1, (uint32_t*)AdcRaw, 2);
-    }
+    temperature_data[0] = (uint8_t)Temperature;
+    temperature_data[1] = (uint8_t)((Temperature - temperature_data[0]) * 100);
+    write_to_backup_sram(temperature_data, sizeof(temperature_data), 0);
+    read_from_backup_sram(data_sram, sizeof(temperature_data), 0);
+    AdcConvCmplt = 0;
+    HAL_ADC_Start_DMA(&hadc1, (uint32_t*)AdcRaw, 2);
+  }
 }
 /* USER CODE END PV */
 
@@ -285,7 +282,7 @@ int main(void)
   } else {
     lcd_display_string(10, 260, (uint8_t*)"FRAM Fail!", FONT_1206, RED);
   }
-  osDelay(1000); // Để xem thông báo
+  osDelay(1000); 
   /* USER CODE END 2 */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -801,19 +798,16 @@ void StartDefaultTask(void const * argument)
     		lcd_draw_rect(62, 7, 116, 36, YELLOW);
     		lcd_display_string(40, 60, (uint8_t*)"DANH SACH THANH VIEN", FONT_1608, N);
     		lcd_draw_rect(20, 45, 200, 40, BLUE);
-       		lcd_draw_rect(22, 47, 196, 36, RED);
+       	lcd_draw_rect(22, 47, 196, 36, RED);
     		lcd_display_string(0, 90, (uint8_t*)"22200061 Le Bao Gia Hoang", FONT_1608, N);
     		lcd_display_string(0, 120, (uint8_t*)"22200188 Doan Le Thanh Toan", FONT_1608, N);
     		lcd_display_string(0, 150, (uint8_t*)"21200283 Nguyen Dao Binh Duong", FONT_1608, N);
     		lcd_display_string(0, 180, (uint8_t*)"21200351 Le Minh Thanh", FONT_1608, N);
     		lcd_display_string(0, 210, (uint8_t*)"21200320 Tran Nguyen Nhat", FONT_1608, N);
-//    		lcd_draw_rect(60, 190, 120, 40, BLUE);
-//    		lcd_draw_rect(62, 192, 116, 36, BLUE);
 
     		lcd_draw_rect(60, 250, 120, 40, BLUE);
     		lcd_draw_rect(62, 252, 116, 36, RED);
 
-    		// lcd_fill_rect(60, 190, 120, 40, BLUE);
     		lcd_display_string(90, 265, (uint8_t*)"TASK 2 >>", FONT_1608, N);
     		need_redraw_main = 0;
     	}
@@ -821,14 +815,8 @@ void StartDefaultTask(void const * argument)
       while(current_screen == 0) {
     	  uint16_t x, y;
     	  if (tp_get_touch_point(&x, &y)) {
-//          char str[30];
-//          sprintf(str, "X:%d Y:%d   ", x, y);
-//          lcd_display_string(10, 170, (uint8_t*)str, FONT_1206, RED);
 
           if (x >= 60 && x <= 180 && y >= 250 && y <= 290) {
-            // lcd_display_string(50, 230, (uint8_t*)"MENU PRESSED!", FONT_1206, RED);
-//            osDelay(500);
-
             extern uint8_t need_redraw_menu;
             need_redraw_menu = 1;
 
@@ -836,7 +824,6 @@ void StartDefaultTask(void const * argument)
             need_redraw_main = 1;
           }
         }
-//        osDelay(50);
       }
     }
     osDelay(5);
@@ -854,18 +841,15 @@ void StartDefaultTask(void const * argument)
 void LCD_Touch(void const * argument)
 {
   /* USER CODE BEGIN LCD_Touch */
-	/* Infinite loop */
-//	static uint8_t need_redraw_menu = 1;
 	 for(;;)
 	  {
 	    if (current_screen == 1) {
 	    	 if (need_redraw_menu) {
 	    		lcd_clear_screen(N);
 
-				lcd_draw_rect(10, 10, 130, 20, WHITE);
-				lcd_draw_rect(11, 11, 128, 18, WHITE);
-				//lcd_fill_rect(10, 10, 130, 20, WHITE);
-				lcd_display_string(20, 12, (uint8_t*)"Nhom:[Nhom 08]", FONT_1608, WHITE);
+          lcd_draw_rect(10, 10, 130, 20, WHITE);
+          lcd_draw_rect(11, 11, 128, 18, WHITE);
+          lcd_display_string(20, 12, (uint8_t*)"Nhom:[Nhom 08]", FONT_1608, WHITE);
 
 			    lcd_draw_rect(20, 50, 90, 70, WHITE);
 			    lcd_draw_rect(21, 51, 88, 68, WHITE);
@@ -900,77 +884,51 @@ void LCD_Touch(void const * argument)
 	      while(current_screen == 1) {
 	        uint16_t x, y;
 	        if (tp_get_touch_point(&x, &y)) {
-	          //char str[30];
-	         // sprintf(str, "X:%d Y:%d  ", x, y);
-	        //  lcd_display_string(10, 240, (uint8_t*)str, FONT_1206, RED);
+            #ifdef 0
+	          char str[30];
+	          sprintf(str, "X:%d Y:%d  ", x, y);
+	          lcd_display_string(10, 240, (uint8_t*)str, FONT_1206, RED);
 
-	        /*  if (x >= 180 && x <= 230 && y >= 220 && y <= 240) {
-	             // lcd_display_string(100, 220, (uint8_t*)"SWITCHING...", FONT_1206, RED);
-	              current_screen = 0;
-	              need_redraw_menu = 1;
-	          }*/
 	          if (x >= 180 && x <= 230 && y >= 220 && y <= 240) {
-	              // Hiển thị thông báo (tùy chọn)
-	             // lcd_display_string(100, 220, (uint8_t*)"SWITCHING...", FONT_1206, RED);
+	            lcd_display_string(100, 220, (uint8_t*)"SWITCHING...", FONT_1206, RED);
+	            current_screen = 0;
+	            need_redraw_menu = 1;
+	          }
+            #endif
+	          if (x >= 180 && x <= 230 && y >= 220 && y <= 240) {
+	            osThreadSuspend(LED_TaskHandle);
+	            osThreadSuspend(CAN_TaskHandle);
+	            osThreadSuspend(Button_FRAM_TasHandle);
+	            osThreadSuspend(Display_CAN_DatHandle);
 
-	              // Suspend tất cả các task
-	              osThreadSuspend(LED_TaskHandle);
-	              osThreadSuspend(CAN_TaskHandle);
-	              osThreadSuspend(Button_FRAM_TasHandle);
-	              osThreadSuspend(Display_CAN_DatHandle);
+              led_running = 0;
 
-	              // Reset biến led_running về 0
-	              led_running = 0;
+	            HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
 
-	              // Tắt LED (đảm bảo LED không còn sáng)
-	              HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
+	            current_screen = 0;
+	            need_redraw_menu = 1;
+	            need_redraw_main = 1;
 
-	              // Xóa các thông tin hiển thị trên màn hình
-	              //lcd_fill_rect(0, 200, 240, 100, BLACK); // Xóa vùng thông tin nhiệt độ, CAN, v.v.
-
-	              // Chuyển về màn hình chính
-	              current_screen = 0;
-	              need_redraw_menu = 1;
-
-	              // Đặt biến redraw để vẽ lại màn hình chính hoàn toàn
-	              need_redraw_main = 1;
-
-	              osDelay(100); // Delay ngắn để đảm bảo các thay đổi được áp dụng
+	            osDelay(100); 
 	          }
 
 	          else if (x >= 20 && x <= 110 && y >= 50 && y <= 120) {
-	              if (led_running) {
-	                  // Nếu LED đang bật, tắt đi
-	            	  lcd_display_string(30, 95, (uint8_t*)"LED ON", FONT_1206, N);
-	                  lcd_display_string(30, 95, (uint8_t*)"LED OFF", FONT_1206, RED);
-	                  //osDelay(200);
-	                  led_running = 0;
-	                  osThreadSuspend(LED_TaskHandle);
+	            if (led_running) {
+	          	  lcd_display_string(30, 95, (uint8_t*)"LED ON", FONT_1206, N);
+	              lcd_display_string(30, 95, (uint8_t*)"LED OFF", FONT_1206, RED);
+	              led_running = 0;
+	              osThreadSuspend(LED_TaskHandle);
 
-	                  // Tắt LED (đặt về trạng thái tắt)
-	                  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
-
-	                  // Vẽ lại nút
-	                //  lcd_fill_rect(20, 50, 90, 70, WHITE);
-	                //  lcd_display_string(30, 75, (uint8_t*)"Task 02-1", FONT_1206, BLACK);
+	              HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
 	              } else {
-	                  // Nếu LED đang tắt, bật lên
 	            	  lcd_display_string(30, 95, (uint8_t*)"LED OFF", FONT_1206, N);
-	                  lcd_display_string(30, 95, (uint8_t*)"LED ON", FONT_1206, GREEN);
-	                 // osDelay(200);
-	                  led_running = 1;
+	                lcd_display_string(30, 95, (uint8_t*)"LED ON", FONT_1206, GREEN);
+	                led_running = 1;
+                  osThreadSuspend(CAN_TaskHandle);
+	                osThreadSuspend(Button_FRAM_TasHandle);
+	                osThreadSuspend(Display_CAN_DatHandle);
 
-	                  // Tắt các task khác
-	                  osThreadSuspend(CAN_TaskHandle);
-	                  osThreadSuspend(Button_FRAM_TasHandle);
-	                  osThreadSuspend(Display_CAN_DatHandle);
-
-	                  // Bật LED task
-	                  osThreadResume(LED_TaskHandle);
-
-	                  // Vẽ lại nút với đánh dấu đang bật
-	                  //lcd_fill_rect(20, 50, 90, 70, CYAN);
-	                  //lcd_display_string(30, 75, (uint8_t*)"Task 02-1", FONT_1206, BLACK);
+                  osThreadResume(LED_TaskHandle);
 	              }
 	          }
 		        else if (x >= 130 && x <= 220 && y >= 50 && y <= 120) {
@@ -1046,7 +1004,6 @@ void CAN(void const * argument)
 	    HAL_CAN_RxFifo0MsgPendingCallback(&hcan1);
 	    char debug_str[50];
 	    sprintf(debug_str, "[Nhom %d] + [%d.%d do C]    ",txdata[0], txdata[1], txdata[2]);
-	   // lcd_fill_rect(0, 250, 240, 40, BLACK);
 
 	    lcd_display_string(10, 270, (uint8_t*)debug_str, FONT_1206, GREEN);
 	    osDelay(500);
@@ -1066,59 +1023,58 @@ void CAN(void const * argument)
 /* USER CODE END Header_Button_FRAM */
 void Button_FRAM(void const * argument)
 {
-	  uint8_t button_state;
-	  uint8_t last_button_state = GPIO_PIN_SET;
-	  last_button_state = HAL_GPIO_ReadPin(btn_GPIO_Port, btn_Pin);
-	  uint8_t log_data[LOG_DATA_SIZE];
-	  char lcd_msg[60];
-	  for(;;)
-	  {
-
-	    button_state = HAL_GPIO_ReadPin(btn_GPIO_Port, btn_Pin);
-	    if (last_button_state == GPIO_PIN_SET && button_state == GPIO_PIN_RESET) {
-	    	// lcd_fill_rect(0, 220, 240, 40, BLUE);
-	    	lcd_display_string(10, 220, (uint8_t*)"Button Pressed!", FONT_1206, WHITE);
-	    	AdcConvCmplt = 0;
-	    	HAL_ADC_Start_DMA(&hadc1, (uint32_t*)AdcRaw, 2);
-	    	uint32_t timeout_adc = HAL_GetTick() + 50;
-	    	while(!AdcConvCmplt && HAL_GetTick() < timeout_adc){
-	    	  osDelay(1);
-	      }
-	    	if(AdcConvCmplt){
-	    	  UpdateTemperature();
-	      } else {
-	    	  temperature_data[0] = 0xFF;
-          temperature_data[1] = 0xFF;
-	    	  lcd_display_string(10, 240, (uint8_t*)"ADC Timeout!", FONT_1206, RED);
-	      }
-	    	        HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
-	    	        HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
-	    	        log_data[0] = temperature_data[0];
-	    	        log_data[1] = temperature_data[1];
-	    	        log_data[2] = sTime.Hours;
-	    	        log_data[3] = sTime.Minutes;
-	    	        log_data[4] = sTime.Seconds;
-	    	        log_data[5] = sDate.Date;
-	    	        log_data[6] = sDate.Month;
-	    	        log_data[7] = (uint8_t)sDate.Year;
-	    	        if (FRAM_WriteBytes(&hi2c2, fram_log_address, log_data, LOG_DATA_SIZE) == HAL_OK) {
-	    	            sprintf(lcd_msg, "Da ghi vao FRAM @0x%04X", fram_log_address);
-	    	            lcd_display_string(10, 240, (uint8_t*)lcd_msg, FONT_1206, GREEN);
-	    	            fram_log_address += LOG_DATA_SIZE;
-	    	            if (fram_log_address > (FRAM_MAX_MEMORY_ADDRESS - LOG_DATA_SIZE + 1) ) {
-	    	                fram_log_address = 0;
-	    	            }
-	    	        } else {
-	    	            lcd_display_string(10, 240, (uint8_t*)"Failed!", FONT_1206, RED);
-	    	        }
-	    	        osDelay(200);
-	    	    }
-	    	    last_button_state = button_state;
-
-	    	    osDelay(100);
-	    	    lcd_display_string(10, 240, (uint8_t*)lcd_msg, FONT_1206, N);//xóa chữ
-	    	    lcd_display_string(10, 220, (uint8_t*)"Button Pressed!", FONT_1206, N);//xóa chữ
-	    	  }
+  uint8_t button_state;
+  uint8_t last_button_state = GPIO_PIN_SET;
+  last_button_state = HAL_GPIO_ReadPin(btn_GPIO_Port, btn_Pin);
+  uint8_t log_data[LOG_DATA_SIZE];
+  char lcd_msg[60];
+  for(;;)
+  {
+    button_state = HAL_GPIO_ReadPin(btn_GPIO_Port, btn_Pin);
+	  if (last_button_state == GPIO_PIN_SET && button_state == GPIO_PIN_RESET) {
+      lcd_display_string(10, 220, (uint8_t*)"Button Pressed!", FONT_1206, WHITE);
+      AdcConvCmplt = 0;
+      HAL_ADC_Start_DMA(&hadc1, (uint32_t*)AdcRaw, 2);
+      uint32_t timeout_adc = HAL_GetTick() + 50;
+      while(!AdcConvCmplt && HAL_GetTick() < timeout_adc){
+        osDelay(1);
+      }
+      if(AdcConvCmplt){
+        UpdateTemperature();
+      } 
+      else {
+        temperature_data[0] = 0xFF;
+        temperature_data[1] = 0xFF;
+        lcd_display_string(10, 240, (uint8_t*)"ADC Timeout!", FONT_1206, RED);
+      }
+      HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+      HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
+      log_data[0] = temperature_data[0];
+      log_data[1] = temperature_data[1];
+      log_data[2] = sTime.Hours;
+      log_data[3] = sTime.Minutes;
+      log_data[4] = sTime.Seconds;
+      log_data[5] = sDate.Date;
+      log_data[6] = sDate.Month;
+      log_data[7] = (uint8_t)sDate.Year;
+      if (FRAM_WriteBytes(&hi2c2, fram_log_address, log_data, LOG_DATA_SIZE) == HAL_OK) {
+        sprintf(lcd_msg, "Da ghi vao FRAM @0x%04X", fram_log_address);
+        lcd_display_string(10, 240, (uint8_t*)lcd_msg, FONT_1206, GREEN);
+        fram_log_address += LOG_DATA_SIZE;
+        if (fram_log_address > (FRAM_MAX_MEMORY_ADDRESS - LOG_DATA_SIZE + 1) ) {
+          fram_log_address = 0;
+        }
+      }
+      else {
+        lcd_display_string(10, 240, (uint8_t*)"Failed!", FONT_1206, RED);
+      }
+      osDelay(200);
+	  }
+	  last_button_state = button_state;
+    osDelay(100);
+	  lcd_display_string(10, 240, (uint8_t*)lcd_msg, FONT_1206, N);//xóa chữ
+	  lcd_display_string(10, 220, (uint8_t*)"Button Pressed!", FONT_1206, N);//xóa chữ
+	}
   /* USER CODE END Button_FRAM */
 }
 
@@ -1133,13 +1089,13 @@ void Display_CAN(void const * argument)
 {
   /* USER CODE BEGIN Display_CAN */
 	for(;;) {
-	    char display_str[50];
-	    sprintf(display_str, "[Nhom %d] + [%d.%d do C]",RxData[0], RxData[1], RxData[2]);
-	    lcd_display_string(10, 300, (uint8_t*)display_str, FONT_1206, GREEN);
-	    osDelay(3000);
-	    current_screen = 0;
-	    need_redraw_main = 1;
-	    osThreadSuspend(Display_CAN_DatHandle);
+	  char display_str[50];
+	  sprintf(display_str, "[Nhom %d] + [%d.%d do C]",RxData[0], RxData[1], RxData[2]);
+	  lcd_display_string(10, 300, (uint8_t*)display_str, FONT_1206, GREEN);
+	  osDelay(3000);
+	  current_screen = 0;
+	  need_redraw_main = 1;
+	  osThreadSuspend(Display_CAN_DatHandle);
 
   /* USER CODE END Display_CAN */
 }
@@ -1163,10 +1119,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     HAL_IncTick();
   }
   /* USER CODE BEGIN Callback 1 */
-  //day la commet cac muc duoc them vao 10h
-  //sưa doi trong user code begin pv giúp task 2 đóng khi task1 mở lúc mới nạp code
-  //  hcan1.Init.AutoRetransmission = ENABLE;
-  //
   /* USER CODE END Callback 1 */
 }
 
