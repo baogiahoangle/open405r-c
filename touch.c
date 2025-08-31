@@ -1,31 +1,56 @@
-/*****************************************************************************
-* | File      	:		touch.c
-* | Author      :   Waveshare team
-* | Function    :   Touch API
-* | Info        :
-*----------------
-* |	This version:   V1.0
-* | Date        :   2019-04-30
-* | Info        :
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documnetation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to  whom the Software is
-# furished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS OR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
-#
+/******************************************************************************
+* | File        :   touch.c
+* | Description :  Touch screen API for XPT2046 controller
+* | Version     :  V1.0
+*
+* This file provides functions to initialize, calibrate, and interact with a
+* resistive touch screen using the XPT2046 controller. It includes routines for
+* drawing touch points, handling calibration, scanning for touch events, and
+* retrieving touch coordinates. The API is designed to work with an LCD display
+* for visual feedback and debugging.
+*
+* Function Documentation:
+*
+* tp_init:
+*   @brief  Initialize the touch controller hardware.
+*
+* tp_draw_touch_point:
+*   @brief  Draw a cross and circle at the specified coordinates to indicate a touch point.
+*   @param  hwXpos: X-axis position.
+*   @param  hwYpos: Y-axis position.
+*   @param  hwColor: Color of the touch point.
+*
+* tp_draw_big_point:
+*   @brief  Draw a larger (2x2) dot at the specified coordinates.
+*   @param  hwXpos: X-axis position.
+*   @param  hwYpos: Y-axis position.
+*   @param  hwColor: Color of the point.
+*
+* tp_show_info:
+*   @brief  Display calibration and touch information on the LCD.
+*   @param  hwXpos0, hwYpos0 ... hwXpos3, hwYpos3: Calibration points.
+*   @param  hwFac: Calibration factor.
+*
+* tp_scan:
+*   @brief  Scan for a touch event and update touch coordinates.
+*   @param  chCoordType: 0 for screen coordinates, 1 for raw ADC values.
+*   @retval 1 if touch is detected, 0 otherwise.
+*
+* tp_adjust:
+*   @brief  Calibrate the touch screen by prompting the user to touch specific points.
+*
+* tp_dialog:
+*   @brief  Display a dialog or clear area on the LCD for touch interaction.
+*
+* tp_draw_board:
+*   @brief  Draw on the LCD based on touch input, including a clear area.
+*
+* tp_get_touch_point:
+*   @brief  Get the current touch coordinates if the screen is touched.
+*   @param  x: Pointer to store X coordinate.
+*   @param  y: Pointer to store Y coordinate.
+*   @retval true if touch is detected, false otherwise.
+*
 ******************************************************************************/
 #include "touch.h"
 #include "LCD_Driver.h"
@@ -35,24 +60,11 @@
 
 static tp_dev_t s_tTouch;
 
-/******************************************************************************
-function :	initial touch lcd
-parameter:
-  phwXpos: ponit to x axis
-  phwYpos: ponit to y axis
-******************************************************************************/
 void tp_init(void)
 {
 	xpt2046_init();
 }
 
-/******************************************************************************
-function :	draw a touch point on lcd 
-parameter:
-  phwXpos: x axis
-  phwYpos: y axis
-	hwColor: point color
-******************************************************************************/
 void tp_draw_touch_point(uint16_t hwXpos, uint16_t hwYpos, uint16_t hwColor)
 {
 	lcd_draw_line(hwXpos - 12, hwYpos, hwXpos + 13, hwYpos, hwColor);
@@ -64,13 +76,6 @@ void tp_draw_touch_point(uint16_t hwXpos, uint16_t hwYpos, uint16_t hwColor)
 	lcd_draw_circle(hwXpos, hwYpos, 6, hwColor);
 }
 
-/******************************************************************************
-function :	draw a big touch point on lcd 
-parameter:
-  phwXpos: x axis
-  phwYpos: y axis
-	hwColor: point color
-******************************************************************************/
 void tp_draw_big_point(uint16_t hwXpos, uint16_t hwYpos, uint16_t hwColor)
 {
 	lcd_draw_dot(hwXpos, hwYpos, hwColor);
@@ -79,19 +84,6 @@ void tp_draw_big_point(uint16_t hwXpos, uint16_t hwYpos, uint16_t hwColor)
 	lcd_draw_dot(hwXpos + 1, hwYpos + 1, hwColor);
 }
 
-/******************************************************************************
-function :	show information on lcd
-parameter:
- phwXpos0: x0 coordinate
- phwYpos0: y0 coordinate
- phwXpos1: x1 coordinate
- phwYpos1: y1 coordinate
- phwXpos2: x2 coordinate
- phwYpos2: y2 coordinate
- phwXpos3: x3 coordinate
- phwYpos3: y3 coordinate
-		hwFac: fac value
-******************************************************************************/
 void tp_show_info(uint16_t hwXpos0, uint16_t hwYpos0,
 								  uint16_t hwXpos1, uint16_t hwYpos1,
 								  uint16_t hwXpos2, uint16_t hwYpos2,
@@ -127,39 +119,6 @@ void tp_show_info(uint16_t hwXpos0, uint16_t hwYpos0,
 	lcd_display_num(40 + 56, 240, hwFac, 3, 16, RED);
 }
 
-/******************************************************************************
-	function :	scan touch
-	parameter:
-chCoordType:
-******************************************************************************/
-//uint8_t tp_scan(uint8_t chCoordType)
-//{
-//	if (!(XPT2046_IRQ_READ())) {
-//		if (chCoordType) {
-//			xpt2046_twice_read_xy(&s_tTouch.hwXpos, &s_tTouch.hwYpos);
-//		} else if (xpt2046_twice_read_xy(&s_tTouch.hwXpos, &s_tTouch.hwYpos)) {
-//			s_tTouch.hwXpos = s_tTouch.fXfac * abs(s_tTouch.hwXpos) + s_tTouch.iXoff;
-//			s_tTouch.hwYpos = s_tTouch.fYfac * abs(s_tTouch.hwYpos) + s_tTouch.iYoff;
-//		}
-//		if (0 == (s_tTouch.chStatus & TP_PRESS_DOWN)) {
-//			s_tTouch.chStatus = TP_PRESS_DOWN | TP_PRESSED;
-//			s_tTouch.hwXpos0 = s_tTouch.hwXpos;
-//			s_tTouch.hwYpos0 = s_tTouch.hwYpos;
-//		}
-//	} else {
-//		if (s_tTouch.chStatus & TP_PRESS_DOWN) {
-//			s_tTouch.chStatus &= ~(1 << 7);
-//		} else {
-//			s_tTouch.hwXpos0 = 0;
-//			s_tTouch.hwYpos0 = 0;
-//			s_tTouch.hwXpos = 0xffff;
-//			s_tTouch.hwYpos = 0xffff;
-//		}
-//	}
-//
-//	return (s_tTouch.chStatus & TP_PRESS_DOWN);
-//}
-
 uint8_t tp_scan(uint8_t chCoordType)
 {
     if (!(XPT2046_IRQ_READ())) {
@@ -173,10 +132,6 @@ uint8_t tp_scan(uint8_t chCoordType)
             s_tTouch.hwXpos = raw_x;
             s_tTouch.hwYpos = raw_y;
             if (!chCoordType) {
-            	// Print adc value
-//            	tp_dialog();
-//            	lcd_display_num(50, 30, s_tTouch.hwXpos, 4, FONT_1608, BLUE);
-//            	lcd_display_num(100, 30, s_tTouch.hwYpos, 4, FONT_1608, BLUE);
 
                 s_tTouch.hwXpos = s_tTouch.fXfac * raw_y + s_tTouch.iXoff;
                 s_tTouch.hwYpos = s_tTouch.fYfac * raw_x + s_tTouch.iYoff;
@@ -200,10 +155,6 @@ uint8_t tp_scan(uint8_t chCoordType)
     return (s_tTouch.chStatus & TP_PRESS_DOWN);
 }
 
-/******************************************************************************
-function :	adjust touch lcd
-parameter:
-******************************************************************************/
 void tp_adjust(void)
 {	
 	uint8_t  cnt = 0;
@@ -217,21 +168,11 @@ void tp_adjust(void)
 	tp_draw_touch_point(20, 20, RED);
 	s_tTouch.chStatus = 0;
 	s_tTouch.fXfac = 0;
-	// ***********Hard code assign*****************************
-//	s_tTouch.fYfac = -0.078144f; 			//   Dung
-//	s_tTouch.iYoff = 320;
-//	s_tTouch.fXfac = -0.058608f;
-//	s_tTouch.iXoff = 240;
-	s_tTouch.fXfac = -0.070588f;		// Finalllllllllll
+	s_tTouch.fXfac = -0.070588f;		
 	s_tTouch.iXoff = 265;
 	s_tTouch.fYfac = -0.094117f;
 	s_tTouch.iYoff = 355;
-//	s_tTouch.fXfac = -0.06122f;				// Final
-//	s_tTouch.iXoff = 240;
-//	s_tTouch.fYfac = -0.08816f;
-
 	return;
-	// ********************************************************
 
 	while (1) {
 		tp_scan(1);
@@ -362,10 +303,6 @@ void tp_adjust(void)
  	}
 }
 
-/******************************************************************************
-function :	dialog touch lcd
-parameter:
-******************************************************************************/
 void tp_dialog(void)
 {
 	lcd_clear_screen(WHITE);
@@ -376,30 +313,16 @@ void tp_draw_board(void)
 {
 	tp_scan(0);
 	if (s_tTouch.chStatus & TP_PRESS_DOWN) {
-		//tp_dialog();
-//		lcd_display_num(50, 50, s_tTouch.hwXpos, 3, FONT_1608, RED);
-//		lcd_display_num(100, 50, s_tTouch.hwYpos, 3, FONT_1608, RED);
 		if (s_tTouch.hwXpos < LCD_WIDTH && s_tTouch.hwYpos < LCD_HEIGHT) {
 			if (s_tTouch.hwXpos > (LCD_WIDTH - 40) && s_tTouch.hwYpos < 30) {
 				tp_dialog();
 			} else {
-//				tp_draw_touch_point(s_tTouch.hwXpos, s_tTouch.hwYpos, RED);
 				tp_draw_big_point(s_tTouch.hwXpos, s_tTouch.hwYpos, RED);
 			}
 		}
 	}
 }
 
-/****************************************************************************
-* Function Name: tp_get_touch_point
-* Description: Gets touch coordinates if screen is touched
-* Parameters:
-*   x: Pointer to store X coordinate
-*   y: Pointer to store Y coordinate
-* Return:
-*   true: If screen is touched
-*   false: If screen is not touched
-****************************************************************************/
 bool tp_get_touch_point(uint16_t *x, uint16_t *y)
 {
     // Scan for touch event

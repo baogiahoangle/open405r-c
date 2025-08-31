@@ -1,11 +1,10 @@
 /*****************************************************************************
-* | File      	:		xpt2046.h
-* | Author      :   Waveshare team
+* | File      	:		touch.h
 * | Function    :   Touch API
 * | Info        :
 *----------------
 * |	This version:   V1.0
-* | Date        :   2019-05-05
+* | Date        :   2025-06-24
 * | Info        :
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -28,30 +27,33 @@
 #
 ******************************************************************************/
 
-#ifndef __XPT2046_H
-#define __XPT2046_H
+#ifndef __TOUCH_H_
+#define __TOUCH_H_
 
 #include "stm32f4xx.h"
-#include "LCD_Driver.h"
+#include <stdbool.h>  
 
-#define XPT2046_CS_PIN          GPIO_PIN_9
-#define XPT2046_IRQ_PIN         GPIO_PIN_4
+#define TP_PRESS_DOWN           0x80
+#define TP_PRESSED              0x40
+bool tp_get_touch_point(uint16_t *x, uint16_t *y);
+typedef struct {
+	uint16_t hwXpos0;
+	uint16_t hwYpos0;
+	uint16_t hwXpos;
+	uint16_t hwYpos;
+	uint8_t chStatus;
+	uint8_t chType;
+	short iXoff;
+	short iYoff;
+	float fXfac;
+	float fYfac;
+} tp_dev_t;
 
-#define XPT2046_CS_GPIO         GPIOB
-#define XPT2046_IRQ_GPIO        GPIOB
+extern void tp_init(void);
+extern void tp_adjust(void);
+extern void tp_dialog(void);
+extern void tp_draw_board(void);
 
-#define XPT2046_CS_H()      HAL_GPIO_WritePin(XPT2046_CS_GPIO, XPT2046_CS_PIN, GPIO_PIN_SET)
-#define XPT2046_CS_L()      HAL_GPIO_WritePin(XPT2046_CS_GPIO, XPT2046_CS_PIN, GPIO_PIN_RESET)
-
-#define XPT2046_IRQ_READ()    HAL_GPIO_ReadPin(XPT2046_IRQ_GPIO, XPT2046_IRQ_PIN)
-
-//#define XPT2046_WRITE_BYTE(__DATA)       spi1_communication(__DATA)
-extern SPI_HandleTypeDef hspi1;
-#define XPT2046_WRITE_BYTE(__DATA)       xpt2046_spi_write(__DATA)
-
-extern void xpt2046_init(void);
-extern void xpt2046_read_xy(uint16_t *phwXpos, uint16_t *phwYpos);
-extern uint8_t xpt2046_twice_read_xy(uint16_t *phwXpos, uint16_t *phwYpos);
 
 #endif
 
