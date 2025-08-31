@@ -13,6 +13,7 @@ This project is a firmware for STM32F4 boards (Open405R), using FreeRTOS and sup
 
 ## Software and Tools
 - **STM32CubeMX**: A hardware configuration tool that automatically generates HAL code for peripherals such as GPIO, EXTI, and TIM, helping to shorten development time.
+
 ![STM32CubeMX](./image/STM32CubeMX.png)
 - **Keil µVision 5**: An integrated development environment (IDE) for ARM, supporting compilation, programming, and debugging for STM32.
 ![KeilC](./image/keilC.png)
